@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">LiveHelper</string>
+    <string name="PUBtn">PushUps</string>
+    <string name="NOSEBtn">Touch this button\nwith your nose!!!</string>
+    <string name="InitCounts">0</string>
+    <string name="CVBtn">InitCV</string>
+</resources>
