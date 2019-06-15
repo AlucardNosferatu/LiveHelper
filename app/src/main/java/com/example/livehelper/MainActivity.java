@@ -5,6 +5,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 
+// TODO: 2019/6/15 test GithubAPI and SensorManager 
+
 public class MainActivity extends AppCompatActivity {
 
     @Override
