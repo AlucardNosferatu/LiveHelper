@@ -11,6 +11,7 @@
         android:theme="@style/AppTheme">
         <activity android:name=".CVActivity"/>
         <activity android:name=".NLPActivity"/>
+        <activity android:name=".MotionActivity"/>
         <activity android:name=".PushUpsActivity" />
         <activity android:name=".MainActivity">
             <intent-filter>

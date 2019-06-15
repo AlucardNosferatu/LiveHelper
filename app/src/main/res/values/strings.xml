@@ -9,4 +9,5 @@
     <string name="sport_line">运动轨迹</string>
     <string name="download_offline">下载管理</string>
     <string name="NLPBtn">InitNLP</string>
+    <string name="SensorBtn">InitSensor</string>
 </resources>
