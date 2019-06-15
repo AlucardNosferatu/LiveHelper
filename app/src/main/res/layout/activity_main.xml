@@ -15,9 +15,16 @@
         android:text="@string/PUBtn" />
 
     <Button
-        android:id="@+id/PushUps"
+        android:id="@+id/InitCV"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:onClick="enterCV"
         android:text="@string/CVBtn" />
+
+    <Button
+        android:id="@+id/InitNLP"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="enterNLP"
+        android:text="@string/NLPBtn" />
 </LinearLayout>

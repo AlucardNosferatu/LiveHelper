@@ -6,7 +6,7 @@ android {
 
     defaultConfig {
         applicationId "com.example.livehelper"
-        minSdkVersion 26
+        minSdkVersion 22
         targetSdkVersion 28
         versionCode 1
         versionName "1.0"
@@ -38,4 +38,5 @@ dependencies {
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
     implementation project(path: ':opencv')
+    implementation files('libs\\opennlp-tools-1.6.0.jar')
 }
