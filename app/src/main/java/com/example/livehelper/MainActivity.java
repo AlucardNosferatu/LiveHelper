@@ -5,7 +5,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 
-// TODO: 2019/6/15 test GithubAPI and SensorManager 
+// TODO: 2019/6/15 test GithubAPI and SensorManager
+// TODO: 2019/6/15 AmapAPI sample verification was failed, need further feedback from its origin
 
 public class MainActivity extends AppCompatActivity {
 
