@@ -7,22 +7,50 @@ import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.hardware.SensorEventListener;
+import android.util.Log;
+import android.view.View;
 import android.widget.TextView;
 
+import java.util.ArrayList;
+
+import lecho.lib.hellocharts.view.LineChartView;
+
 public class MotionActivity extends AppCompatActivity implements SensorEventListener {
+    private Boolean isRecord;
     private TextView ACC;
     private SensorManager SM;
     private float[] gravity = new float[3];
+    private ArrayList<Float> dataX;
+    private ArrayList<Float> dataY;
+    private ArrayList<Float> dataZ;
+    LineChartView lineChart;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_motion);
+        isRecord=false;
+        dataX=new ArrayList<Float>();
+        dataY=new ArrayList<Float>();
+        dataZ=new ArrayList<Float>();
+        lineChart=(LineChartView)findViewById(R.id.line_chart);
         ACC = (TextView) findViewById(R.id.ACC);
         SM =(SensorManager)getSystemService(Context.SENSOR_SERVICE);
     }
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
         //实现接口必须重写所有方法，不想写也得留空
+    }
+
+    public void MonitorSwitch(View view){
+        if(isRecord) {
+            isRecord = false;
+        }
+        else{
+            dataX.clear();
+            dataY.clear();
+            dataZ.clear();
+            isRecord = true;
+        }
     }
 
     @Override
@@ -34,11 +62,16 @@ public class MotionActivity extends AppCompatActivity implements SensorEventList
                 gravity[0] = alpha * gravity[0] + (1 - alpha) * event.values[0];
                 gravity[1] = alpha * gravity[1] + (1 - alpha) * event.values[1];
                 gravity[2] = alpha * gravity[2] + (1 - alpha) * event.values[2];
-                String ACC_VALUE = "加速度传感器\n" + "x:"
-                        + (event.values[0] - gravity[0]) + "\n" + "y:"
-                        + (event.values[1] - gravity[1]) + "\n" + "z:"
+                String ACC_VALUE = "x:"
+                        + (event.values[0] - gravity[0]) + "\t" + "y:"
+                        + (event.values[1] - gravity[1]) + "\t" + "z:"
                         + (event.values[2] - gravity[2]);
+                if(isRecord){
+                    dataX.add()
+
+                }
                 ACC.setText(ACC_VALUE);
+
                 //重力加速度9.81m/s^2，只受到重力作用的情况下，自由下落的加速度
                 break;
             case Sensor.TYPE_GRAVITY://重力传感器
