@@ -14,14 +14,17 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
-
+import android.content.pm.PackageManager;
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
-
-
+import android.widget.Toast;
+import android.support.v4.content.ContextCompat;
+import android.support.v4.app.ActivityCompat;
+import android.Manifest;
 
 public class CVActivity extends AppCompatActivity {
+    private static final int MY_PERMISSIONS_REQUEST_CALL_PHONE = 7;
     private static final int RC_CHOOSE_PHOTO = 4;
     private static final String TAG = "CVActivity";
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
@@ -50,21 +53,45 @@ public class CVActivity extends AppCompatActivity {
 
 
     }
-    public void choosePic(View view){
+    public void choosePhone(View view){
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED)
+        {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                    MY_PERMISSIONS_REQUEST_CALL_PHONE);
+        }
+        else {
+            choosePic();
+        }
+    }
+    public void choosePic(){
         Intent GetImageIntent=new Intent(Intent.ACTION_GET_CONTENT);
         GetImageIntent.setType("image/*");
         startActivityForResult(GetImageIntent,RC_CHOOSE_PHOTO);
+    }
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        if (requestCode == MY_PERMISSIONS_REQUEST_CALL_PHONE) {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                choosePic();
+            }
+            else {
+                // Permission Denied
+                Toast.makeText(CVActivity.this, "Permission Denied", Toast.LENGTH_SHORT).show();
+            }
+        }
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
     @Override
     protected void onActivityResult(int requestCode,int resultCode,Intent data){
         if(resultCode==RESULT_OK){
-
             Uri FileURI = data.getData();
             String WholeID=DocumentsContract.getDocumentId(FileURI);
             String ID=WholeID.split(":")[1];
             String FilePath="";
-
             String[] column = { MediaStore.Images.Media.DATA };
             String sel = MediaStore.Images.Media._ID + "=?";
             Cursor cursor = this.getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, column,sel, new String[] { ID }, null);
@@ -79,6 +106,4 @@ public class CVActivity extends AppCompatActivity {
             IV.setImageBitmap(B);
         }
     }
-
-
 }
