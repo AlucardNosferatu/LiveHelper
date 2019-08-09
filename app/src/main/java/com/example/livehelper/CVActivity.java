@@ -41,14 +41,15 @@ public class CVActivity extends AppCompatActivity {
             }
         }
     };
+
     @Override
-    public void onResume()
-    {
+    public void onResume(){
         super.onResume();
         if (!OpenCVLoader.initDebug()) {
             Log.d(TAG, "Internal OpenCV library not found. Using OpenCV Manager for initialization");
             OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_0_0, this, mLoaderCallback);
-        } else {
+        }
+        else {
             Log.d(TAG, "OpenCV library found inside package. Using it!");
             mLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS);
         }
@@ -59,12 +60,6 @@ public class CVActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_cv);
     }
-
-    public void ValueExtract(){
-
-
-    }
-
 
     public void choosePhone(View view){
         if (ContextCompat.checkSelfPermission(this,
@@ -79,11 +74,13 @@ public class CVActivity extends AppCompatActivity {
             choosePic();
         }
     }
+
     public void choosePic(){
         Intent GetImageIntent=new Intent(Intent.ACTION_GET_CONTENT);
         GetImageIntent.setType("image/*");
         startActivityForResult(GetImageIntent,RC_CHOOSE_PHOTO);
     }
+
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         if (requestCode == MY_PERMISSIONS_REQUEST_CALL_PHONE) {
@@ -114,9 +111,13 @@ public class CVActivity extends AppCompatActivity {
             }
             cursor.close();
             Bitmap B=BitmapFactory.decodeFile(FilePath);
-            
             ImageView IV=findViewById(R.id.imageView);
             IV.setImageBitmap(B);
         }
+    }
+
+    public void ValueExtract(){
+
+
     }
 }
