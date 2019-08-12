@@ -120,6 +120,7 @@ public class MotionActivity extends AppCompatActivity implements SensorEventList
         }
     }
 
+    @Override
     protected void onResume() {
         super.onResume();
         //注册加速度传感器
