@@ -51,15 +51,15 @@ public class MotionActivity extends AppCompatActivity implements SensorEventList
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_motion);
         isRecord=false;
-        dataX=new ArrayList<PointValue>();
-        dataY=new ArrayList<PointValue>();
-        dataZ=new ArrayList<PointValue>();
-        lineChart=(LineChartView)findViewById(R.id.line_chart);
+        dataX= new ArrayList<>();
+        dataY= new ArrayList<>();
+        dataZ= new ArrayList<>();
+        lineChart= findViewById(R.id.line_chart);
         LCD=new LineChartData();
-        Lines=new ArrayList<Line>();
+        Lines= new ArrayList<>();
         LCD.setLines(Lines);
         counts=0;
-        ACC = (TextView) findViewById(R.id.ACC);
+        ACC = findViewById(R.id.ACC);
         SM =(SensorManager)getSystemService(Context.SENSOR_SERVICE);
 
         MyThread myThread = new MyThread();
@@ -142,15 +142,15 @@ public class MotionActivity extends AppCompatActivity implements SensorEventList
     protected void onResume() {
         super.onResume();
         //注册加速度传感器
-        SM.registerListener((SensorEventListener) this,SM.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),SensorManager.SENSOR_DELAY_UI);//采集频率
+        SM.registerListener(this,SM.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),SensorManager.SENSOR_DELAY_UI);//采集频率
         //注册重力传感器
-        SM.registerListener((SensorEventListener) this,SM.getDefaultSensor(Sensor.TYPE_GRAVITY),SensorManager.SENSOR_DELAY_FASTEST);
+        SM.registerListener(this,SM.getDefaultSensor(Sensor.TYPE_GRAVITY),SensorManager.SENSOR_DELAY_FASTEST);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        SM.unregisterListener((SensorEventListener) this);
+        SM.unregisterListener(this);
     }
 
     class MyThread implements Runnable {
@@ -163,7 +163,6 @@ public class MotionActivity extends AppCompatActivity implements SensorEventList
     private void FeedDicks(){
         try{
             SS = new ServerSocket(54500,32);
-            Executor service = Executors.newCachedThreadPool();
             while (true) {
                 //等待客户端的连接
                 System.out.println("等待客户端连接！");
