@@ -18,6 +18,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -45,6 +46,8 @@ public class MotionActivity extends AppCompatActivity implements SensorEventList
     List<Line> Lines;
     int counts;
     String ACC_VALUE;
+    int PortNo;
+    TextView PortNoText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,6 +65,11 @@ public class MotionActivity extends AppCompatActivity implements SensorEventList
         ACC = findViewById(R.id.ACC);
         SM =(SensorManager)getSystemService(Context.SENSOR_SERVICE);
 
+        //注册加速度传感器
+        SM.registerListener(this,SM.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),SensorManager.SENSOR_DELAY_UI);//采集频率
+        //注册重力传感器
+        SM.registerListener(this,SM.getDefaultSensor(Sensor.TYPE_GRAVITY),SensorManager.SENSOR_DELAY_FASTEST);
+        PortNoText=findViewById(R.id.editPort);
         MyThread myThread = new MyThread();
         Thread thread = new Thread(myThread);
         thread.start();
@@ -95,30 +103,37 @@ public class MotionActivity extends AppCompatActivity implements SensorEventList
                 float VX = event.values[0] - gravity[0];
                 float VY = event.values[1] - gravity[1];
                 float VZ = event.values[2] - gravity[2];
+                String VXS=String.format(Locale.CHINA,"%.2f", VX);
+                String VYS=String.format(Locale.CHINA,"%.2f", VY);
+                String VZS=String.format(Locale.CHINA,"%.2f", VZ);
                 ACC_VALUE
-                        = "x:" + VX + "\t"
-                        + "y:" + VY + "\t"
-                        + "z:" + VZ;
+//                        = "x:" + VXS + "-"
+//                        + "y:" + VYS + "-"
+//                        + "z:" + VZS;
+                        = VXS + "#"
+                        + VYS + "#"
+                        + VZS;
+
                 if(isRecord){
                     if(counts<2){
                         counts++;
                     }
                     else{
-                        Lines.clear();
-                        counts=0;
-                        dataX.add(new PointValue(VX,dataX.size()));
-                        dataY.add(new PointValue(VY,dataY.size()));
-                        dataZ.add(new PointValue(VZ,dataZ.size()));
-                        Line LX = new Line(dataX);
-                        Line LY = new Line(dataY);
-                        Line LZ = new Line(dataZ);
-                        LX.setColor(Color.parseColor("#0000FF"));
-                        LY.setColor(Color.parseColor("#00FF00"));
-                        LZ.setColor(Color.parseColor("#FF0000"));
-                        Lines.add(LX);
-                        Lines.add(LY);
-                        Lines.add(LZ);
-                        lineChart.setLineChartData(LCD);
+//                        Lines.clear();
+//                        counts=0;
+//                        dataX.add(new PointValue(VX,dataX.size()));
+//                        dataY.add(new PointValue(VY,dataY.size()));
+//                        dataZ.add(new PointValue(VZ,dataZ.size()));
+//                        Line LX = new Line(dataX);
+//                        Line LY = new Line(dataY);
+//                        Line LZ = new Line(dataZ);
+//                        LX.setColor(Color.parseColor("#0000FF"));
+//                        LY.setColor(Color.parseColor("#00FF00"));
+//                        LZ.setColor(Color.parseColor("#FF0000"));
+//                        Lines.add(LX);
+//                        Lines.add(LY);
+//                        Lines.add(LZ);
+//                        lineChart.setLineChartData(LCD);
                         if(dataX.size()>=100){
                             isRecord=false;
                         }
@@ -142,16 +157,17 @@ public class MotionActivity extends AppCompatActivity implements SensorEventList
     protected void onResume() {
         super.onResume();
         //注册加速度传感器
-        SM.registerListener(this,SM.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),SensorManager.SENSOR_DELAY_UI);//采集频率
+//        SM.registerListener(this,SM.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),SensorManager.SENSOR_DELAY_UI);//采集频率
         //注册重力传感器
-        SM.registerListener(this,SM.getDefaultSensor(Sensor.TYPE_GRAVITY),SensorManager.SENSOR_DELAY_FASTEST);
+//        SM.registerListener(this,SM.getDefaultSensor(Sensor.TYPE_GRAVITY),SensorManager.SENSOR_DELAY_FASTEST);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        SM.unregisterListener(this);
+//        SM.unregisterListener(this);
     }
+
 
     class MyThread implements Runnable {
         @Override
@@ -161,8 +177,18 @@ public class MotionActivity extends AppCompatActivity implements SensorEventList
     }
 
     private void FeedDicks(){
+        try {
+            PortNo = Integer.parseInt(PortNoText.getText().toString());
+            assert PortNo > 1024;
+            assert PortNo < 65535;
+        }
+        catch (Exception e){
+            PortNo=54500;
+        }
         try{
-            SS = new ServerSocket(54500,32);
+
+
+            SS = new ServerSocket(PortNo,32);
             while (true) {
                 //等待客户端的连接
                 System.out.println("等待客户端连接！");
