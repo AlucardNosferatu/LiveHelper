@@ -11,12 +11,16 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.CharBuffer;
 import java.util.Locale;
 
 import static java.lang.Thread.sleep;
@@ -25,7 +29,9 @@ public class MotionActivity extends AppCompatActivity implements SensorEventList
     ServerSocket SS=null;
     Socket S=null;
     OutputStream O=null;
+    InputStream I=null;
     BufferedWriter BW=null;
+    BufferedReader BR=null;
     Boolean isListening=false;
     private TextView ACC;
     private float[] gravity = new float[3];
@@ -64,12 +70,20 @@ public class MotionActivity extends AppCompatActivity implements SensorEventList
             if(isListening){
                 try {
                     S = SS.accept();
+                    I = S.getInputStream();
                     O = S.getOutputStream();
+                    BR = new BufferedReader(new InputStreamReader(I));
                     BW = new BufferedWriter(new OutputStreamWriter(O));
                     while(true){
-                        sleep(200);
                         BW.write(ACC_VALUE+"\n");
                         BW.flush();
+                        String GetStr=BR.readLine();
+                        while(!GetStr.equals("recv"))
+                        {
+                            System.out.println(GetStr);
+                            sleep(1);
+                            GetStr=BR.readLine();
+                        }
                     }
                 }
                 catch(Exception e){
@@ -86,7 +100,9 @@ public class MotionActivity extends AppCompatActivity implements SensorEventList
                 if(BW!=null){
                     TSend.interrupt();
                     BW.close();
+                    BR.close();
                     O.close();
+                    I.close();
                     S.close();
                 }
                 SS.close();
