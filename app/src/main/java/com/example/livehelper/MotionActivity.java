@@ -8,6 +8,7 @@ import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 
 import java.io.BufferedWriter;
@@ -26,63 +27,94 @@ public class MotionActivity extends AppCompatActivity implements SensorEventList
     OutputStream O=null;
     BufferedWriter BW=null;
     Boolean isListening=false;
-    Boolean isSending=false;
     private TextView ACC;
-    private SensorManager SM;
     private float[] gravity = new float[3];
     private String ACC_VALUE;
+    private Thread TSend;
+    private MyThread myThread;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_motion);
         ACC = findViewById(R.id.ACC);
-        SM =(SensorManager)getSystemService(Context.SENSOR_SERVICE);
+        SensorManager SM = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         //注册加速度传感器
-        SM.registerListener(this,SM.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),SensorManager.SENSOR_DELAY_UI);//采集频率
+        SM.registerListener(this, SM.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),SensorManager.SENSOR_DELAY_UI);//采集频率
         //注册重力传感器
-        SM.registerListener(this,SM.getDefaultSensor(Sensor.TYPE_GRAVITY),SensorManager.SENSOR_DELAY_FASTEST);
+        SM.registerListener(this, SM.getDefaultSensor(Sensor.TYPE_GRAVITY),SensorManager.SENSOR_DELAY_FASTEST);
         isListening=false;
-        isSending=false;
+        myThread = new MyThread();
     }
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
         //实现接口必须重写所有方法，不想写也得留空
     }
 
-    public void SSwitch(View view){
-        if(isListening)
-        {
-
-            isListening=false;
-        }
-        else
-        {
-            
-
-            isListening=true;
+    class MyThread implements Runnable {
+        @Override
+        public void run() {
+            ScanClient();
         }
     }
 
-    public void DSwitch(View view){
+    private void ScanClient(){
+        while(true)
+        {
+            if(isListening){
+                try {
+                    S = SS.accept();
+                    O = S.getOutputStream();
+                    BW = new BufferedWriter(new OutputStreamWriter(O));
+                    while(true){
+                        sleep(200);
+                        BW.write(ACC_VALUE+"\n");
+                        BW.flush();
+                    }
+                }
+                catch(Exception e){
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    public void SSwitch(View view){
         if(isListening)
         {
-            if(isSending)
-            {
-
-                isSending=false;
+            try{
+                if(BW!=null){
+                    TSend.interrupt();
+                    BW.close();
+                    O.close();
+                    S.close();
+                }
+                SS.close();
+                isListening=false;
+                Button B=findViewById(R.id.SocketSwitch);
+                B.setText("Listen");
             }
-            else
+            catch(IOException e)
             {
-
-                isSending=true;
+                e.printStackTrace();
             }
-
         }
         else
         {
-            isSending=false;
-            System.out.println("Do nothing.\n");
+            TextView PortNoText=findViewById(R.id.editPort);
+            int PortNo=Integer.parseInt(PortNoText.getText().toString());
+            try {
+                SS = new ServerSocket(PortNo, 32);
+                TSend = new Thread(myThread);
+                TSend.start();
+            }
+            catch(IOException e)
+            {
+                e.printStackTrace();
+            }
+            isListening=true;
+            Button B=findViewById(R.id.SocketSwitch);
+            B.setText("Disconnect");
         }
     }
 
