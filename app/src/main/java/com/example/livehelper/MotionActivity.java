@@ -1,7 +1,6 @@
 package com.example.livehelper;
 
 import android.content.Context;
-import android.graphics.Color;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -12,20 +11,12 @@ import android.view.View;
 import android.widget.TextView;
 
 import java.io.BufferedWriter;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-
-import lecho.lib.hellocharts.model.Line;
-import lecho.lib.hellocharts.model.LineChartData;
-import lecho.lib.hellocharts.model.PointValue;
-import lecho.lib.hellocharts.view.LineChartView;
 
 import static java.lang.Thread.sleep;
 
@@ -34,33 +25,23 @@ public class MotionActivity extends AppCompatActivity implements SensorEventList
     Socket S=null;
     OutputStream O=null;
     BufferedWriter BW=null;
+
     private Boolean isRecord;
     private TextView ACC;
     private SensorManager SM;
     private float[] gravity = new float[3];
-    private List<PointValue> dataX;
-    private List<PointValue> dataY;
-    private List<PointValue> dataZ;
-    LineChartView lineChart;
-    LineChartData LCD;
-    List<Line> Lines;
+
     int counts;
     String ACC_VALUE;
     int PortNo;
     TextView PortNoText;
+    Thread thread;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_motion);
         isRecord=false;
-        dataX= new ArrayList<>();
-        dataY= new ArrayList<>();
-        dataZ= new ArrayList<>();
-        lineChart= findViewById(R.id.line_chart);
-        LCD=new LineChartData();
-        Lines= new ArrayList<>();
-        LCD.setLines(Lines);
         counts=0;
         ACC = findViewById(R.id.ACC);
         SM =(SensorManager)getSystemService(Context.SENSOR_SERVICE);
@@ -69,10 +50,10 @@ public class MotionActivity extends AppCompatActivity implements SensorEventList
         SM.registerListener(this,SM.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),SensorManager.SENSOR_DELAY_UI);//采集频率
         //注册重力传感器
         SM.registerListener(this,SM.getDefaultSensor(Sensor.TYPE_GRAVITY),SensorManager.SENSOR_DELAY_FASTEST);
+
         PortNoText=findViewById(R.id.editPort);
         MyThread myThread = new MyThread();
-        Thread thread = new Thread(myThread);
-        thread.start();
+        this.thread = new Thread(myThread);
     }
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
@@ -82,11 +63,32 @@ public class MotionActivity extends AppCompatActivity implements SensorEventList
     public void MonitorSwitch(View view){
         if(isRecord) {
             isRecord = false;
+            try{
+                SS.close();
+                S.close();
+                O.close();
+                BW.close();
+            }
+            catch(IOException e)
+            {
+                e.printStackTrace();
+            }
+            if(this.thread.isAlive()){
+                this.thread.interrupt();
+                this.thread = null;
+            }
         }
         else{
-            dataX.clear();
-            dataY.clear();
-            dataZ.clear();
+            if(this.thread.isAlive()){
+                this.thread.interrupt();
+                this.thread = null;
+                MyThread myThread = new MyThread();
+                this.thread = new Thread(myThread);
+                this.thread.start();
+            }
+            else{
+                this.thread.start();
+            }
             isRecord = true;
         }
     }
@@ -107,9 +109,6 @@ public class MotionActivity extends AppCompatActivity implements SensorEventList
                 String VYS=String.format(Locale.CHINA,"%.2f", VY);
                 String VZS=String.format(Locale.CHINA,"%.2f", VZ);
                 ACC_VALUE
-//                        = "x:" + VXS + "-"
-//                        + "y:" + VYS + "-"
-//                        + "z:" + VZS;
                         = VXS + "#"
                         + VYS + "#"
                         + VZS;
@@ -119,28 +118,10 @@ public class MotionActivity extends AppCompatActivity implements SensorEventList
                         counts++;
                     }
                     else{
-//                        Lines.clear();
-//                        counts=0;
-//                        dataX.add(new PointValue(VX,dataX.size()));
-//                        dataY.add(new PointValue(VY,dataY.size()));
-//                        dataZ.add(new PointValue(VZ,dataZ.size()));
-//                        Line LX = new Line(dataX);
-//                        Line LY = new Line(dataY);
-//                        Line LZ = new Line(dataZ);
-//                        LX.setColor(Color.parseColor("#0000FF"));
-//                        LY.setColor(Color.parseColor("#00FF00"));
-//                        LZ.setColor(Color.parseColor("#FF0000"));
-//                        Lines.add(LX);
-//                        Lines.add(LY);
-//                        Lines.add(LZ);
-//                        lineChart.setLineChartData(LCD);
-                        if(dataX.size()>=100){
-                            isRecord=false;
-                        }
+                        counts=0;
                     }
+                    ACC.setText(ACC_VALUE);
                 }
-                ACC.setText(ACC_VALUE);
-
                 //重力加速度9.81m/s^2，只受到重力作用的情况下，自由下落的加速度
                 break;
             case Sensor.TYPE_GRAVITY://重力传感器
@@ -156,16 +137,11 @@ public class MotionActivity extends AppCompatActivity implements SensorEventList
     @Override
     protected void onResume() {
         super.onResume();
-        //注册加速度传感器
-//        SM.registerListener(this,SM.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),SensorManager.SENSOR_DELAY_UI);//采集频率
-        //注册重力传感器
-//        SM.registerListener(this,SM.getDefaultSensor(Sensor.TYPE_GRAVITY),SensorManager.SENSOR_DELAY_FASTEST);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-//        SM.unregisterListener(this);
     }
 
 
@@ -177,35 +153,26 @@ public class MotionActivity extends AppCompatActivity implements SensorEventList
     }
 
     private void FeedDicks(){
-        try {
-            PortNo = Integer.parseInt(PortNoText.getText().toString());
-            assert PortNo > 1024;
-            assert PortNo < 65535;
-        }
-        catch (Exception e){
+        PortNo = Integer.parseInt(PortNoText.getText().toString());
+        if(PortNo < 1024 || PortNo > 65535)
+        {
             PortNo=54500;
         }
         try{
-
-
             SS = new ServerSocket(PortNo,32);
-            while (true) {
-                //等待客户端的连接
-                System.out.println("等待客户端连接！");
-                S = SS.accept();
-                System.out.println("与客户端连接成功！");
-                //调用execute()方法时，如果必要，会创建一个新的线程来处理任务，但它首先会尝试使用已有的线程，
-                //如果一个线程空闲60秒以上，则将其移除线程池；
-                //另外，任务是在Executor的内部排队，而不是在网络中排队
-                O = S.getOutputStream();
-                BW = new BufferedWriter(new OutputStreamWriter(O));
-                while(true){
-                    sleep(200);
-                    if(isRecord){
-                        BW.write(ACC_VALUE+"\n");
-                        BW.flush();
-                    }
-                }
+            //等待客户端的连接
+            System.out.println("等待客户端连接！");
+            S = SS.accept();
+            System.out.println("与客户端连接成功！");
+            //调用execute()方法时，如果必要，会创建一个新的线程来处理任务，但它首先会尝试使用已有的线程，
+            //如果一个线程空闲60秒以上，则将其移除线程池；
+            //另外，任务是在Executor的内部排队，而不是在网络中排队
+            O = S.getOutputStream();
+            BW = new BufferedWriter(new OutputStreamWriter(O));
+            while(true){
+                sleep(200);
+                BW.write(ACC_VALUE);
+                BW.flush();
             }
         }
         catch(Exception e){
