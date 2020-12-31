@@ -20,24 +20,24 @@ public class MainActivity extends AppCompatActivity{
         setContentView(R.layout.activity_main);
     }
 
-    public void enterPU(View view){
-        Intent intent = new Intent();
-        intent.setClass(MainActivity.this,PushUpsActivity.class);
-        startActivity(intent);
-    }
-    public void enterCV(View view){
-        Intent intent = new Intent();
-        intent.setClass(MainActivity.this,CVActivity.class);
-        startActivity(intent);
-    }
+//    public void enterPU(View view){
+//        Intent intent = new Intent();
+//        intent.setClass(MainActivity.this,PushUpsActivity.class);
+//        startActivity(intent);
+//    }
+//    public void enterCV(View view){
+//        Intent intent = new Intent();
+//        intent.setClass(MainActivity.this,CVActivity.class);
+//        startActivity(intent);
+//    }
     public void enterSM(View view){
         Intent intent = new Intent();
         intent.setClass(MainActivity.this,MotionActivity.class);
         startActivity(intent);
     }
-    public void enterNLP(View view){
-        Intent intent = new Intent();
-        intent.setClass(MainActivity.this,NLPActivity.class);
-        startActivity(intent);
-    }
+//    public void enterNLP(View view){
+//        Intent intent = new Intent();
+//        intent.setClass(MainActivity.this,NLPActivity.class);
+//        startActivity(intent);
+//    }
 }

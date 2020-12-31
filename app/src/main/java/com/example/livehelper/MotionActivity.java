@@ -4,23 +4,35 @@ import android.content.Context;
 import android.graphics.Color;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.hardware.SensorEventListener;
-import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
+import java.io.BufferedWriter;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 import lecho.lib.hellocharts.model.Line;
 import lecho.lib.hellocharts.model.LineChartData;
 import lecho.lib.hellocharts.model.PointValue;
 import lecho.lib.hellocharts.view.LineChartView;
 
+import static java.lang.Thread.sleep;
+
 public class MotionActivity extends AppCompatActivity implements SensorEventListener {
+    ServerSocket SS=null;
+    Socket S=null;
+    OutputStream O=null;
+    BufferedWriter BW=null;
     private Boolean isRecord;
     private TextView ACC;
     private SensorManager SM;
@@ -32,6 +44,8 @@ public class MotionActivity extends AppCompatActivity implements SensorEventList
     LineChartData LCD;
     List<Line> Lines;
     int counts;
+    String ACC_VALUE;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -47,6 +61,10 @@ public class MotionActivity extends AppCompatActivity implements SensorEventList
         counts=0;
         ACC = (TextView) findViewById(R.id.ACC);
         SM =(SensorManager)getSystemService(Context.SENSOR_SERVICE);
+
+        MyThread myThread = new MyThread();
+        Thread thread = new Thread(myThread);
+        thread.start();
     }
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
@@ -77,12 +95,12 @@ public class MotionActivity extends AppCompatActivity implements SensorEventList
                 float VX = event.values[0] - gravity[0];
                 float VY = event.values[1] - gravity[1];
                 float VZ = event.values[2] - gravity[2];
-                String ACC_VALUE
+                ACC_VALUE
                         = "x:" + VX + "\t"
                         + "y:" + VY + "\t"
                         + "z:" + VZ;
                 if(isRecord){
-                    if(counts<10){
+                    if(counts<2){
                         counts++;
                     }
                     else{
@@ -101,7 +119,7 @@ public class MotionActivity extends AppCompatActivity implements SensorEventList
                         Lines.add(LY);
                         Lines.add(LZ);
                         lineChart.setLineChartData(LCD);
-                        if(dataX.size()>=20){
+                        if(dataX.size()>=100){
                             isRecord=false;
                         }
                     }
@@ -135,4 +153,40 @@ public class MotionActivity extends AppCompatActivity implements SensorEventList
         SM.unregisterListener((SensorEventListener) this);
     }
 
+    class MyThread implements Runnable {
+        @Override
+        public void run() {
+            FeedDicks();
+        }
+    }
+
+    private void FeedDicks(){
+        try{
+            SS = new ServerSocket(54500,32);
+            Executor service = Executors.newCachedThreadPool();
+            while (true) {
+                //等待客户端的连接
+                System.out.println("等待客户端连接！");
+                S = SS.accept();
+                System.out.println("与客户端连接成功！");
+                //调用execute()方法时，如果必要，会创建一个新的线程来处理任务，但它首先会尝试使用已有的线程，
+                //如果一个线程空闲60秒以上，则将其移除线程池；
+                //另外，任务是在Executor的内部排队，而不是在网络中排队
+                O = S.getOutputStream();
+                BW = new BufferedWriter(new OutputStreamWriter(O));
+                while(true){
+                    sleep(200);
+                    if(isRecord){
+                        BW.write(ACC_VALUE+"\n");
+                        BW.flush();
+                    }
+                }
+            }
+        }
+        catch(Exception e){
+            e.printStackTrace();
+        }
+    }
+
 }
+
