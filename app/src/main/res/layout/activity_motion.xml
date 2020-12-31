@@ -18,14 +18,14 @@
         tools:layout_editor_absoluteX="43dp" />
 
     <Button
-        android:id="@+id/StartRecord"
+        android:id="@+id/SocketSwitch"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
-        android:onClick="MonitorSwitch"
-        android:text="Record"
+        android:onClick="SSwitch"
+        android:text="Listen"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.498"
         app:layout_constraintStart_toStartOf="parent"
@@ -44,5 +44,19 @@
         android:text="54500"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/StartRecord" />
+        app:layout_constraintTop_toBottomOf="@+id/SocketSwitch" />
+
+    <Button
+        android:id="@+id/DataSwitch"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:onClick="DSwitch"
+        android:text="Send"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/editPort" />
+
 </android.support.constraint.ConstraintLayout>
