@@ -7,6 +7,7 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -20,7 +21,6 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.CharBuffer;
 import java.util.Locale;
 
 import static java.lang.Thread.sleep;
@@ -38,17 +38,14 @@ public class MotionActivity extends AppCompatActivity implements SensorEventList
     private String ACC_VALUE;
     private Thread TSend;
     private MyThread myThread;
+    private SensorManager SM;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_motion);
         ACC = findViewById(R.id.ACC);
-        SensorManager SM = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        //注册加速度传感器
-        SM.registerListener(this, SM.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),SensorManager.SENSOR_DELAY_UI);//采集频率
-        //注册重力传感器
-        SM.registerListener(this, SM.getDefaultSensor(Sensor.TYPE_GRAVITY),SensorManager.SENSOR_DELAY_FASTEST);
+        SM = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         isListening=false;
         myThread = new MyThread();
     }
@@ -75,6 +72,9 @@ public class MotionActivity extends AppCompatActivity implements SensorEventList
                     BR = new BufferedReader(new InputStreamReader(I));
                     BW = new BufferedWriter(new OutputStreamWriter(O));
                     while(true){
+                        String cTime=String.format(Locale.CHINA,"%d", System.currentTimeMillis());
+                        System.out.println("Is updating "+cTime+"\n");
+                        Log.d("DEBUG","Is updating "+cTime+"\n");
                         BW.write(ACC_VALUE+"\n");
                         BW.flush();
                         String GetStr=BR.readLine();
@@ -173,11 +173,17 @@ public class MotionActivity extends AppCompatActivity implements SensorEventList
     @Override
     protected void onResume() {
         super.onResume();
+        //注册加速度传感器
+        SM.unregisterListener(this);
+        SM.registerListener(this, SM.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),SensorManager.SENSOR_DELAY_UI);//采集频率
+        //注册重力传感器
+        SM.registerListener(this, SM.getDefaultSensor(Sensor.TYPE_GRAVITY),SensorManager.SENSOR_DELAY_FASTEST);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
+//      SM.unregisterListener(this);
     }
 
 }
