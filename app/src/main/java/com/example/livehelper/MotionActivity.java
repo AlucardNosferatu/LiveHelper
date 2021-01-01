@@ -1,11 +1,16 @@
 package com.example.livehelper;
 
+import android.app.Activity;
+import android.app.Service;
 import android.content.Context;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.media.AudioAttributes;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Vibrator;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -61,6 +66,27 @@ public class MotionActivity extends AppCompatActivity implements SensorEventList
         }
     }
 
+    public static void starVibrate(final Activity activity, long[] pattern, int isRepeat) {
+        Vibrator vib = (Vibrator) activity.getSystemService(Service.VIBRATOR_SERVICE);
+        vib.vibrate(pattern, isRepeat);
+
+        AudioAttributes audioAttributes;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            audioAttributes = new AudioAttributes.Builder()
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .setUsage(AudioAttributes.USAGE_ALARM) //key
+                    .build();
+            vib.vibrate(pattern, isRepeat, audioAttributes);
+        }else {
+            vib.vibrate(pattern, isRepeat);
+        }
+    }
+
+    public static void stopVibrate(final Activity activity) {
+        Vibrator vib = (Vibrator) activity.getSystemService(Service.VIBRATOR_SERVICE);
+        vib.cancel();
+    }
+
     private void ScanClient(){
         while(true)
         {
@@ -72,17 +98,29 @@ public class MotionActivity extends AppCompatActivity implements SensorEventList
                     BR = new BufferedReader(new InputStreamReader(I));
                     BW = new BufferedWriter(new OutputStreamWriter(O));
                     while(true){
-                        String cTime=String.format(Locale.CHINA,"%d", System.currentTimeMillis());
-                        System.out.println("Is updating "+cTime+"\n");
-                        Log.d("DEBUG","Is updating "+cTime+"\n");
+//                        String cTime=String.format(Locale.CHINA,"%d", System.currentTimeMillis());
+//                        System.out.println("Is updating "+cTime+"\n");
+//                        Log.d("DEBUG","Is updating "+cTime+"\n");
                         BW.write(ACC_VALUE+"\n");
                         BW.flush();
                         String GetStr=BR.readLine();
-                        while(!GetStr.equals("recv"))
+                        boolean valid_resp=GetStr.equals("recv")||GetStr.startsWith("DMG")||GetStr.equals("connected");
+                        while(!valid_resp)
                         {
                             System.out.println(GetStr);
                             sleep(1);
                             GetStr=BR.readLine();
+                            valid_resp=GetStr.equals("recv")||GetStr.startsWith("DMG");
+                        }
+                        if(GetStr.startsWith("DMG"))
+                        {
+                            System.out.println(GetStr);
+                            String[] DMG_VAL_STR=GetStr.split("DMG#");
+                            int DMG_VAL=Integer.parseInt(DMG_VAL_STR[1]);
+                            if(DMG_VAL>=100){
+                                DMG_VAL=90;
+                            }
+                            starVibrate(this,new long[]{0, DMG_VAL, 100-DMG_VAL, DMG_VAL, 100-DMG_VAL, DMG_VAL, 100-DMG_VAL},-1);
                         }
                     }
                 }
