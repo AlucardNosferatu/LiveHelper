@@ -1,2 +1,2 @@
-# JourneyPlanner
-别一天到晚宅在家里
+# JobPlanner
+空射导弹
