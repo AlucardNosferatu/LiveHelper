@@ -7,8 +7,10 @@ import nltk
 def get_job_popular():
     blacklist = [
         '工程师', '开发', '实施', 'cad', '专业', '经验', 'bim', '计算机相关', '设备', '电气工程师', '工艺', '算法',
-        '技术',
-        'python', 'solidworks', '五险', 'proe', '射频', '相关', '工程', '设计', '机械', '电气'
+        '技术', 'python', 'solidworks', '五险', 'proe', '射频', '相关', '工程', '设计', '机械', '电气', '经理', '人事',
+        '招聘者', '专员', '主管', '招聘', 'hr', '计算机软件', '智慧', '智能', '互联网', '项目', '售前', '销售', '服务',
+        '质量', '工业', '管理', '电子商务', '人事主管', '环保', '仪器仪表', '电子', '检测', '半导体', '集成电路',
+        '配置', '总监', '其他', '加工', '自动化', '测试', '硬件'
     ]
     data = pickle.load(open('BOSSCrawler/job_popular.pkl', 'rb'))
     data = [jieba.lcut(' '.join(info)) for info in data]
@@ -109,4 +111,5 @@ def get_job_complex():
 
 
 if __name__ == '__main__':
+    get_job_popular()
     get_job_complex()
