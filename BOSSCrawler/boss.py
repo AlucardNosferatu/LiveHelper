@@ -12,7 +12,7 @@ from selenium import webdriver
 # 自动化控制浏览器模块
 
 job = '工程师'  # 设置需要爬取的职业信息
-page = 10  # 设置爬取页数
+page = 100  # 设置爬取页数
 htmls_list = []  # 建立网页信息存储列表
 driver = webdriver.Chrome()  # 初始化webdriver
 for num in range(1, page + 1, 1):
@@ -23,7 +23,7 @@ for num in range(1, page + 1, 1):
     time.sleep(15)
     htmls = driver.page_source  # 获取页面信息
     htmls_list.append(str(htmls))  # 将获取页面信息添加至网页存储列表
-    ran_time = random.randint(1, 5)  # 随机生成停顿时间
+    ran_time = random.randint(1, 10)  # 随机生成停顿时间
     time.sleep(ran_time)  # 程序休眠
 driver.close()  # 关闭浏览器
 
