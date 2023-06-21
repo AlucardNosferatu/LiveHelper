@@ -11,7 +11,7 @@ from selenium import webdriver
 
 # 自动化控制浏览器模块
 
-job = None  # 设置需要爬取的职业信息
+job = '工程师'  # 设置需要爬取的职业信息
 page = 10  # 设置爬取页数
 htmls_list = []  # 建立网页信息存储列表
 driver = webdriver.Chrome()  # 初始化webdriver
@@ -30,7 +30,7 @@ driver.close()  # 关闭浏览器
 info_list = []  # 建立获取职位信息存储列表
 soup = None
 for htmls in htmls_list:
-    soup = BeautifulSoup(htmls, parser="lxml")  # 解析网页
+    soup = BeautifulSoup(htmls, "lxml")  # 解析网页
     job_list = soup.find_all("li", class_="job-card-wrapper")
     for i in job_list:
         body = list(i.children)[0]
