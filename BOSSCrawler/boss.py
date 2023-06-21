@@ -19,6 +19,7 @@ for num in range(1, page + 1, 1):
     url = "https://www.zhipin.com/web/geek/job?city=101230100&page={}".format(num)
     if job is not None:
         url += '&query={}'.format(job)
+    print('Now crawling:', url)
     driver.get(url)  # 自动化运行页面
     time.sleep(15)
     htmls = driver.page_source  # 获取页面信息
