@@ -14,11 +14,11 @@ from tqdm import tqdm
 # 自动化控制浏览器模块
 
 job = '工程师'  # 设置需要爬取的职业信息
-page = 100  # 设置爬取页数
+page = 500  # 设置爬取页数
 htmls_list = []  # 建立网页信息存储列表
 drivers_ = []
 status = []
-for i in range(8):
+for i in range(16):
     drivers_.append(webdriver.Chrome())
     status.append(False)
 
@@ -51,7 +51,8 @@ while False in status:
 for driver in drivers_:
     driver.close()  # 关闭浏览器
 
-info_list = []  # 建立获取职位信息存储列表
+most_popular_jobs = []  # 建立获取职位信息存储列表
+most_complex_jobs = []
 soup = None
 for htmls in tqdm(htmls_list):
     soup = BeautifulSoup(htmls, "lxml")  # 解析网页
@@ -63,8 +64,13 @@ for htmls in tqdm(htmls_list):
         company = list(body.children)[1]
         skills = list(footer.children)[0]
         title = list(list(job.children)[0].children)[0].text
+        salary = list(list(job.children)[1].children)[0].text
+        exp = list(list(list(job.children)[1].children)[1])[0].text
+        edu = list(list(list(job.children)[1].children)[1])[3].text
         skills_list = [skill.text for skill in list(skills.children)]
         skills_list.insert(0, title)
-        info_list.append(skills_list)
-pickle.dump(info_list, open('job_info.pkl', 'wb'))
+        most_popular_jobs.append(skills_list)
+        most_complex_jobs.append([title, salary, exp, edu])
+pickle.dump(most_popular_jobs, open('job_popular.pkl', 'wb'))
+pickle.dump(most_complex_jobs, open('job_complex.pkl', 'wb'))
 print('Done')
