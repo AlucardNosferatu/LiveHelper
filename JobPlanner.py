@@ -50,6 +50,8 @@ def get_job_complex():
         if '年' in exp_:
             if '以内' in exp_:
                 return 0.5 / threshold
+            elif '以上' in exp_:
+                return 1.0
             else:
                 exp_ = exp_.replace('年', '').split('-')
                 exp_ = (float(exp_[0]) + float(exp_[1])) / 2
@@ -65,6 +67,7 @@ def get_job_complex():
     top_k = []
     k = 5
     data = pickle.load(open('BOSSCrawler/job_complex.pkl', 'rb'))
+    detail = pickle.load(open('BOSSCrawler/job_popular.pkl', 'rb'))
     for i in range(len(data)):
         job = data[i]
         title = job[0]
@@ -83,10 +86,10 @@ def get_job_complex():
             edu = job[3]
             edu_score = parse_edu(edu)
             total_score = title_score + salary_score + exp_score + edu_score
-            data[i] += [total_score, title_score, salary_score, exp_score, edu_score]
+            data[i] += [total_score, title_score, salary_score, exp_score, edu_score, i]
         else:
             total_score = -4.0
-            data[i] += [total_score, -1.0, -1.0, -1.0, -1.0]
+            data[i] += [total_score, -1.0, -1.0, -1.0, -1.0, i]
         inserted = False
         for j in range(len(top_k)):
             if data[i][4] <= top_k[j][4]:
@@ -97,6 +100,10 @@ def get_job_complex():
             top_k.append(data[i])
         if len(top_k) > k:
             top_k.pop(0)
+    for i in range(len(top_k)):
+        index = top_k[i][-1]
+        extra_info = detail[index]
+        top_k[i].append(extra_info)
     pickle.dump(top_k, open('BOSSCrawler/top_k_complex.pkl', 'wb'))
     print('Done')
 

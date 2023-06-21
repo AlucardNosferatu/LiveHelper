@@ -18,7 +18,7 @@ page = 500  # 设置爬取页数
 htmls_list = []  # 建立网页信息存储列表
 drivers_ = []
 status = []
-for i in range(16):
+for i in range(8):
     drivers_.append(webdriver.Chrome())
     status.append(False)
 
@@ -46,6 +46,7 @@ for i in range(len(drivers_)):
     threads.append(threading.Thread(target=crawl_source, args=(i, drivers_)))
 for i in range(len(threads)):
     threads[i].start()
+    time.sleep(1)
 while False in status:
     time.sleep(1)
 for driver in drivers_:
