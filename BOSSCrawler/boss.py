@@ -18,7 +18,7 @@ page = 500  # 设置爬取页数
 htmls_list = []  # 建立网页信息存储列表
 drivers_ = []
 status = []
-for i in range(8):
+for i in range(16):
     drivers_.append(webdriver.Chrome())
     status.append(False)
 
@@ -68,8 +68,13 @@ for htmls in tqdm(htmls_list):
         salary = list(list(job.children)[1].children)[0].text
         exp = list(list(list(job.children)[1].children)[1])[0].text
         edu = list(list(list(job.children)[1].children)[1])[3].text
+
+        employer = list(list(list(job.children)[1])[2])[1].text
+        trade = list(list(list(company.children)[1])[1])[0].text
+
         skills_list = [skill.text for skill in list(skills.children)]
         skills_list.insert(0, title)
+        skills_list += [employer, trade]
         most_popular_jobs.append(skills_list)
         most_complex_jobs.append([title, salary, exp, edu])
 pickle.dump(most_popular_jobs, open('job_popular.pkl', 'wb'))
