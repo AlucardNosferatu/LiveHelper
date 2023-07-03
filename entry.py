@@ -19,6 +19,7 @@ cmd_pool = []
 flag = True
 stopwords_cn = stopwords()
 stopwords_en = nltk.corpus.stopwords.words('english')
+# "ci.json" comes from https://github.com/pwxcoo/chinese-xinhua/blob/master/data/ci.json
 stopwords_cn2 = json.load(open('ci.json', 'r', encoding='utf-8'))
 stopwords_cn2 = [word['ci'] for word in stopwords_cn2]
 stopwords_en2 = PyDictionary()
