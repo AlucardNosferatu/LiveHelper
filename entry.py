@@ -1,6 +1,7 @@
 # BeautifulSoup用于处理获取的网页数据
 # 导入正则表达式，绘图，时间，随机模块
 import json
+import os
 import threading
 import time
 import urllib
@@ -63,7 +64,7 @@ def crawl_entry(keyword):
                         break
             lines.append('相关词条：' + ' '.join(related_entries) + '\n')
         if '/' in keyword:
-            lines.insert(0, '同义词：' + keyword)
+            lines.insert(0, '同义词：' + keyword + '\n')
             keyword = keyword.replace('/', 'or')
         open(keyword.lower() + '.txt', 'w', encoding='utf-8').writelines(lines)
     elif ' ' in keyword:
@@ -105,9 +106,9 @@ def crawl_entries_consumer(depth=5):
     print('线程:', threading.currentThread().getName(), '已结束')
 
 
-def crawl_entries_producer():
+def crawl_entries_producer(depth=5):
     global flag
-    c_thread = threading.Thread(target=crawl_entries_consumer, args=(5,))
+    c_thread = threading.Thread(target=crawl_entries_consumer, args=(depth,))
     c_thread.start()
     d_threads = []
     while flag:
@@ -184,4 +185,9 @@ def digest_txt(txt_path):
 
 
 if __name__ == '__main__':
+    path = r'C:\Users\16413\Desktop\Job\Business\Test Techniques\RJ_RI\encyclopedia'
+    files = os.listdir(path)
+    files = [file for file in files if file.endswith('.txt')]
+    files = [file.replace('.txt', '') for file in files]
+    cmd_pool.append('#'.join(files).lower())
     crawl_entries_producer()
