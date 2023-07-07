@@ -2,6 +2,7 @@
 # 导入正则表达式，绘图，时间，随机模块
 import json
 import os
+import random
 import threading
 import time
 import urllib
@@ -10,10 +11,10 @@ import jieba
 import nltk
 from PyDictionary import PyDictionary
 from bs4 import BeautifulSoup
-from pystopwords import stopwords
-
-from selenium import webdriver
 from docx import Document
+from pystopwords import stopwords
+from selenium import webdriver
+from selenium.webdriver import Keys
 
 driver = None
 cmd_pool = []
@@ -28,48 +29,93 @@ pd_lock = threading.Lock()
 cp_lock = threading.Lock()
 
 
-def crawl_entry(keyword):
+def crawl_entry(keyword, use_hw=True):
     global driver
     if driver is None:
         driver = webdriver.Chrome()
     related_entries = []
-    url = 'https://baike.c114.com.cn/view.asp?word={}'.format(urllib.parse.quote(keyword, encoding='gbk'))
+    if use_hw:
+        # url = 'https://info.support.huawei.com/info-finder/encyclopedia/zh/{}.html'.format(
+        #     urllib.parse.quote(keyword)
+        # )
+        url = 'https://info.support.huawei.com/info-finder/encyclopedia/zh/index.html'
+    else:
+        url = 'https://baike.c114.com.cn/view.asp?word={}'.format(urllib.parse.quote(keyword, encoding='gbk'))
     driver.get(url)
-    time.sleep(1)
-    if '用户登录' not in driver.title:
+    time.sleep(random.random()*10 + 2)
+    if '用户登录' not in driver.title and '检索失败页面' not in driver.title:
         html = driver.page_source
         soup = BeautifulSoup(html, "lxml")  # 解析网页
-        entry = soup.find_all("div", class_="box2")[0]
-        for _ in range(5):
-            entry.contents.pop(-1)
-        lines = []
-        for line in entry.contents:
-            line_text = line.text.strip()
-            if len(line_text) > 0:
-                lines.append(line_text)
-            else:
-                lines.append('。')
-        lines = ''.join(lines)
-        while '。。' in lines:
-            lines = lines.replace('。。', '。')
-        lines = lines.replace('。', '。\n')
-        lines = [line + '\n' for line in lines.split('\n') if len(line.strip()) > 0]
-        related = soup.find_all("div", class_="ref")[0]
-        if '相关词条：' in related.text:
-            for related_entry in related.contents:
-                if hasattr(related_entry, 'attrs'):
-                    if 'target' in related_entry.attrs.keys() and related_entry.attrs['target'] == '_blank':
-                        related_entries.append(related_entry.text)
-                    elif 'class' in related_entry.attrs.keys() and related_entry.attrs['class'] == ['disti']:
-                        break
-            lines.append('相关词条：' + ' '.join(related_entries) + '\n')
-        if '/' in keyword:
-            lines.insert(0, '同义词：' + keyword + '\n')
-            keyword = keyword.replace('/', 'or')
-        open(keyword.lower() + '.txt', 'w', encoding='utf-8').writelines(lines)
+        if use_hw:
+            lines = hw_info(related_entries, soup, keyword)
+        else:
+            lines = com_wiki(related_entries, soup)
+        if len(lines) > 0:
+            if '/' in keyword:
+                lines.insert(0, '同义词：' + keyword + '\n')
+                keyword = keyword.replace('/', 'or')
+            open(keyword.lower() + '.txt', 'w', encoding='utf-8').writelines(lines)
     elif ' ' in keyword:
         related_entries = keyword.split(' ')
     return related_entries
+
+
+# noinspection PyUnresolvedReferences
+def hw_info(related_entries, soup, search=None):
+    if search is not None:
+        driver.find_element("id", "search-inputbox").send_keys(search)
+        driver.find_element("id", "search-inputbox").send_keys(Keys.ENTER)
+        time.sleep(1)
+        if '检索失败页面' not in driver.title:
+            html = driver.page_source
+            soup = BeautifulSoup(html, "lxml")  # 解析网页
+            lines = hw_info(related_entries, soup, None)
+        else:
+            return []
+    else:
+        entry = soup.find_all("div", class_="abstract")[0]
+        related = soup.find_all("div", class_="item related")[0]
+        entry = entry.text.replace('\n', '。')
+        while '。。' in entry:
+            entry = entry.replace('。。', '。')
+        lines = [line + '\n' for line in entry.split('。') if len(line.strip()) > 0]
+        if 'style' not in related.attrs.keys():
+            related = related.text
+            while '\n\n' in related:
+                related = related.replace('\n\n', '\n')
+            for r in related.split('\n'):
+                if r.strip() != '相关词条' and len(r.strip()) > 0:
+                    related_entries.append(r.strip())
+            lines.append('相关词条：' + ' '.join(related_entries) + '\n')
+    return lines
+
+
+def com_wiki(related_entries, soup):
+    entry = soup.find_all("div", class_="box2")[0]
+    for _ in range(5):
+        entry.contents.pop(-1)
+    lines = []
+    for line in entry.contents:
+        line_text = line.text.strip()
+        if len(line_text) > 0:
+            lines.append(line_text)
+        else:
+            lines.append('。')
+    lines = ''.join(lines)
+    while '。。' in lines:
+        lines = lines.replace('。。', '。')
+    lines = lines.replace('。', '。\n')
+    lines = [line + '\n' for line in lines.split('\n') if len(line.strip()) > 0]
+    related = soup.find_all("div", class_="ref")[0]
+    if '相关词条：' in related.text:
+        for related_entry in related.contents:
+            if hasattr(related_entry, 'attrs'):
+                if 'target' in related_entry.attrs.keys() and related_entry.attrs['target'] == '_blank':
+                    related_entries.append(related_entry.text)
+                elif 'class' in related_entry.attrs.keys() and related_entry.attrs['class'] == ['disti']:
+                    break
+        lines.append('相关词条：' + ' '.join(related_entries) + '\n')
+    return lines
 
 
 def crawl_entries(keywords, depth=100):
