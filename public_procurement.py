@@ -20,8 +20,8 @@ def crawl_procurements(start_index=5, end_index=64, location='宁夏'):
         time.sleep(random.random() + 1)
 
     url = 'https://b2b.10086.cn/b2b/main/preIndex.html'
+    url_print_view = 'https://b2b.10086.cn/b2b/main/printView.html?noticeBean.id={}&noticeBean.appType=NOTICE'
     driver = webdriver.Chrome()
-
     into_position(url, driver)
     for i in range(start_index - 1, end_index):
         print('page:', i + 1)
@@ -38,20 +38,23 @@ def crawl_procurements(start_index=5, end_index=64, location='宁夏'):
                 p_dict = {}
                 indices = [
                     '{} {}'.format(
-                        p.contents[5].text.strip(),
-                        p.contents[7].text
+                        p.contents[7].text,
+                        p.contents[5].text.strip().replace('/', '\\').replace('\\', 'or')
                     ) for p in p_list if type(p) is Tag and location in p.text
                 ]
                 [
                     p_dict.__setitem__(
-                        p.contents[5].text.strip() + ' ' + p.contents[7].text,
+                        '{} {}'.format(
+                            p.contents[7].text,
+                            p.contents[5].text.strip().replace('/', '\\').replace('\\', 'or')
+                        ),
                         p.attrs['onclick']
                     ) for p in p_list if type(p) is Tag and location in p.text
                 ]
                 assert len(indices) > 0
                 for index in indices:
                     driver.get(
-                        'https://b2b.10086.cn/b2b/main/printView.html?noticeBean.id={}&noticeBean.appType=NOTICE'.format(
+                        url_print_view.format(
                             p_dict[index].replace("selectResult('", '').replace("')", '')
                         )
                     )
@@ -81,7 +84,7 @@ def crawl_procurements(start_index=5, end_index=64, location='宁夏'):
 
 if __name__ == '__main__':
     crawl_procurements(
-        start_index=5,
+        start_index=1,
         end_index=64,
         location='宁夏'
     )
