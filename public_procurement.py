@@ -85,6 +85,6 @@ def crawl_procurements(start_index=5, end_index=64, location='宁夏'):
 if __name__ == '__main__':
     crawl_procurements(
         start_index=1,
-        end_index=64,
-        location='宁夏'
+        end_index=16,
+        location='甘肃'
     )
