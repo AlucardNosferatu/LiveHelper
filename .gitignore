@@ -4,3 +4,5 @@
 *.json
 *.png
 *.pdf
+build/
+*.spec
