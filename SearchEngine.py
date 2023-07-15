@@ -16,7 +16,10 @@ from selenium import webdriver
 # https://learn.microsoft.com/zh-cn/sysinternals/downloads/whois
 def crawl_dnb(page_count=8, keyword='Cisco', driver=None):
     if driver is None:
+        challenge = True
         driver = webdriver.Chrome()
+    else:
+        challenge = False
     base_url = 'https://www.dnb.com/site-search-results.html#'
     dnb_results = []
     for i in range(page_count):
@@ -34,7 +37,7 @@ def crawl_dnb(page_count=8, keyword='Cisco', driver=None):
         p_url = '&'.join(['{}={}'.format(key, p_dict[key]) for key in p_dict])
         url = base_url + p_url
         driver.get(url)
-        if i == 0:
+        if i == 0 and challenge:
             input('pass challenge')
         else:
             time.sleep(2 + random.random())
@@ -220,6 +223,8 @@ def whois2rdap(p_dict):
     whois_res = p_dict['whois_res']
     url = p_dict['url']
     rdap_server = 'https://' + process_whois(whois_res) + '/rdap/domain/{}'
+    # todo: this is not a common paradigm that all RDAP follow,
+    #  need to find a way to lookup RDAP address automatically
     request = requests.get(
         rdap_server.format(url),
         headers={
