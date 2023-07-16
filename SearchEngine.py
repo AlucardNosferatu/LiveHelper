@@ -12,8 +12,19 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 
 
-# whois py lib need whois cmd tool from microsoft
-# https://learn.microsoft.com/zh-cn/sysinternals/downloads/whois
+def crawl_bing(keyword='Enterprise Switch', page_count=2):
+    search_results = []
+    for i in range(page_count):
+        search = quote(keyword, encoding='utf-8') + '&first={}'.format(i * 10)
+        search_results += Bing(search, None)
+    domain_names = [get_domain_name(url) for url in search_results]
+    domain_names = list(set(domain_names))
+    search_domains = {}
+    [search_domains.__setitem__(url, domain_names.index(get_domain_name(url))) for url in search_results]
+    Bing(None, None)
+    return search_results, domain_names, search_domains
+
+
 def crawl_dnb(page_count=8, keyword='Cisco', driver=None):
     if driver is None:
         challenge = True
@@ -47,61 +58,51 @@ def crawl_dnb(page_count=8, keyword='Cisco', driver=None):
     return dnb_results, driver
 
 
-def crawl_rdap_with_whois(domain_names):
+def crawl_rdap(domain_names):
     domain_details = {}
-    base_url = 'https://rdap.markmonitor.com/rdap/domain/{}'
-    pool = ThreadPoolExecutor(max_workers=1)
+    rdap_servers = [
+        'https://rdap.markmonitor.com/rdap/domain/{}',
+        'https://whois.ename.com/rdap/domain/{}',
+        'https://rdap.verisign.com/com/v1/domain/{}',
+        'https://rdap.namecheap.com/domain/{}'
+    ]
     for url in domain_names:
+        i = 0
         print(url)
         try:
-            request = requests.get(base_url.format(url))
+            print(rdap_servers[i].format(url))
+            request = requests.get(rdap_servers[i].format(url))
+            while request.status_code != 200 and i + 1 < len(rdap_servers):
+                i += 1
+                print(rdap_servers[i].format(url))
+                request = requests.get(rdap_servers[i].format(url))
             if request.status_code != 200:
-                lookup = pool.submit(query_thread, url)
-                res = lookup.result(timeout=5)
-                if 'No match for' in res:
-                    raise ValueError("'No match for' in res")
-                lookup = pool.submit(whois2rdap, {'whois_res': res, 'url': url})
-                request = lookup.result(timeout=5)
-            res = parse_rdap(request)
+                print('Cannot find RDAP entry.')
+                res = None
+            else:
+                print('Found RDAP entry')
+                res = parse_rdap(request)
+                if res is None:
+                    print('No valid company information, skipped.')
+                else:
+                    print('Company information extracted.')
             domain_details.__setitem__(url, res)
         except Exception as e:
             print(repr(e))
-            pool.shutdown()
-            pool = ThreadPoolExecutor(max_workers=1)
-            print('线程池重启，连接已切断')
             domain_details.__setitem__(url, None)
         time.sleep(1 + random.random())
     return domain_details
 
 
-def crawl_se(keyword='Enterprise Switch', page_count=2):
-    search_results = []
-    for i in range(page_count):
-        search = quote(keyword, encoding='utf-8') + '&first={}'.format(i * 10)
-        search_results += Bing(search, None)
-    domain_names = [get_domain_name(url) for url in search_results]
-    domain_names = list(set(domain_names))
-    search_domains = {}
-    [search_domains.__setitem__(url, domain_names.index(get_domain_name(url))) for url in search_results]
-    Bing(None, None)
-    return search_results, domain_names, search_domains
-
-
-def crawl_site_info(keyword='Enterprise Switch', page_count=2, mode=None):
-    assert mode in [None, 'wtr', 'rww']
-    search_results, domain_names, search_domains = crawl_se(keyword=keyword, page_count=page_count)
-    if mode is None:
-        mode = 'rww'
-    if mode == 'rww':
-        domain_details = crawl_rdap_with_whois(domain_names)
-    elif mode == 'wtr':
-        domain_details = crawl_whois_then_rdap(domain_names, retry=2)
-    else:
-        raise ValueError("mode should be in [None, 'wtr', 'rww']")
+def crawl_site_info(keyword='Enterprise Switch', page_count=2):
+    search_results, domain_names, search_domains = crawl_bing(keyword=keyword, page_count=page_count)
+    domain_details = crawl_rdap(domain_names)
     return search_results, domain_names, search_domains, domain_details
 
 
-def crawl_whois_then_rdap(domain_names, retry=3):
+# whois py lib need whois cmd tool from microsoft
+# https://learn.microsoft.com/zh-cn/sysinternals/downloads/whois
+def crawl_whois(domain_names, retry=3):
     domain_details = {}
     pool = ThreadPoolExecutor(max_workers=1)
     for url in domain_names:
@@ -111,7 +112,7 @@ def crawl_whois_then_rdap(domain_names, retry=3):
         attempt = 0
         while not ok:
             try:
-                lookup = pool.submit(query_thread, url)
+                lookup = pool.submit(crawl_whois_thread, url)
                 res = lookup.result(timeout=5)
                 ok = True
             except Exception as e:
@@ -125,20 +126,14 @@ def crawl_whois_then_rdap(domain_names, retry=3):
             time.sleep(attempt * 1 + random.random() * 1)
         if 'No match for' in res:
             res = None
-        if res is not None:
-            try:
-                lookup = pool.submit(whois2rdap, {'whois_res': res, 'url': url})
-                request = lookup.result(timeout=5)
-                res = parse_rdap(request)
-            except Exception as e:
-                print(repr(e))
-                pool.shutdown()
-                pool = ThreadPoolExecutor(max_workers=1)
-                print('线程池重启，连接已切断')
-                res = None
         domain_details.__setitem__(url, res)
         time.sleep(1 + random.random())
     return domain_details
+
+
+def crawl_whois_thread(url):
+    res = wh.get(url, 'whois.internic.net')
+    return res
 
 
 def filter_dnb(dnb_results):
@@ -214,32 +209,26 @@ def process_whois(domain_detail):
     return whois_dict['Registrar WHOIS Server']
 
 
-def query_thread(url):
-    res = wh.get(url, 'whois.internic.net')
-    return res
+# def whois2rdap(p_dict):
+#     whois_res = p_dict['whois_res']
+#     url = p_dict['url']
+#     rdap_server = 'https://' + process_whois(whois_res) + '/rdap/domain/{}'
+#     # todo: this is not a common paradigm that all RDAP follow,
+#     #  need to find a way to lookup RDAP address automatically
+#     request = requests.get(
+#         rdap_server.format(url),
+#         headers={
+#             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, '
+#                           'like Gecko) Chrome/114.0.0.0 Safari/537.36'
+#         }
+#     )
+#     return request
 
 
-def whois2rdap(p_dict):
-    whois_res = p_dict['whois_res']
-    url = p_dict['url']
-    rdap_server = 'https://' + process_whois(whois_res) + '/rdap/domain/{}'
-    # todo: this is not a common paradigm that all RDAP follow,
-    #  need to find a way to lookup RDAP address automatically
-    request = requests.get(
-        rdap_server.format(url),
-        headers={
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, '
-                          'like Gecko) Chrome/114.0.0.0 Safari/537.36'
-        }
-    )
-    return request
-
-
-def main(product_key='Enterprise Switch', product_page=2, dnb_page=2, crawl_mode=None):
+def main(product_key='Enterprise Switch', product_page=2, dnb_page=2):
     search_results, domain_names, search_domains, domain_details = crawl_site_info(
         keyword=product_key,
-        page_count=product_page,
-        mode=crawl_mode
+        page_count=product_page
     )
     driver = None
     domain2dnb = {}
@@ -262,4 +251,4 @@ def main(product_key='Enterprise Switch', product_page=2, dnb_page=2, crawl_mode
 
 
 if __name__ == '__main__':
-    main(product_key='Enterprise Switch', product_page=5, dnb_page=1, crawl_mode='rww')
+    main(product_key='Enterprise Switch', product_page=200, dnb_page=1)
