@@ -54,7 +54,10 @@ def crawl_dnb(page_count=8, keyword='Cisco', driver=None):
             time.sleep(2 + random.random())
         soup = BeautifulSoup(driver.page_source, 'lxml')
         tbody_content = soup.find('tbody')
-        dnb_results += process_dnb(tbody_content)
+        if tbody_content is None:
+            break
+        else:
+            dnb_results += process_dnb(tbody_content)
     return dnb_results, driver
 
 
