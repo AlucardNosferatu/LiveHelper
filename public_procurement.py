@@ -1,6 +1,7 @@
 import os
 import random
 import time
+from base64 import b64decode
 
 import PyPDF2
 from bs4 import BeautifulSoup, Tag
@@ -8,19 +9,26 @@ from selenium import webdriver
 from selenium.webdriver import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.print_page_options import PrintOptions
-from base64 import b64decode
-
 from tqdm import tqdm
 
 keywords = None
+company_id = {
+    '': 0,
+    '总部': 1
+}
 
 
-def crawl_procurements(start_index=5, end_index=64, keyword='宁夏'):
-    def into_position(u, d):
+def crawl_procurements(start_index=5, end_index=64, keyword='宁夏', company='总部'):
+    def into_position(u, d, c):
         d.get(u)
         time.sleep(random.random() + 1)
         d.find_element(By.ID, "procurement_notice_list").click()
         time.sleep(random.random() + 1)
+        if c != '':
+            d.find_element(By.ID, "company1").click()
+            time.sleep(random.random() + 1)
+            d.find_element(By.XPATH, '//*[@id="company1_panel"]/span[{}]'.format(company_id[c])).click()
+            time.sleep(random.random() + 1)
         d.find_element(By.ID, "title").send_keys(keyword)
         d.find_element(By.ID, "search").send_keys(Keys.ENTER)
         time.sleep(random.random() + 1)
@@ -28,7 +36,7 @@ def crawl_procurements(start_index=5, end_index=64, keyword='宁夏'):
     url = 'https://b2b.10086.cn/b2b/main/preIndex.html'
     url_print_view = 'https://b2b.10086.cn/b2b/main/printView.html?noticeBean.id={}&noticeBean.appType=NOTICE'
     driver = webdriver.Chrome()
-    into_position(url, driver)
+    into_position(url, driver, company)
     for i in range(start_index - 1, end_index):
         print('page:', i + 1)
         finish = False
@@ -87,6 +95,14 @@ def crawl_procurements(start_index=5, end_index=64, keyword='宁夏'):
                     # region return catalog
                     driver.back()
                     time.sleep(random.random() + 1)
+                    if company != '':
+                        driver.find_element(By.ID, "company1").click()
+                        time.sleep(random.random() + 1)
+                        driver.find_element(
+                            By.XPATH,
+                            '//*[@id="company1_panel"]/span[{}]'.format(company_id[company])
+                        ).click()
+                        time.sleep(random.random() + 1)
                     driver.find_element(By.ID, "search").send_keys(Keys.ENTER)
                     time.sleep(random.random() + 2)
                     driver.execute_script('gotoPage({})'.format(i + 1))
@@ -95,7 +111,7 @@ def crawl_procurements(start_index=5, end_index=64, keyword='宁夏'):
                 finish = True
             except Exception as e:
                 print(repr(e))
-                into_position(url, driver)
+                into_position(url, driver, company)
 
 
 def filter_procurements(files_folder='采购信息/宁夏', filter_func=None):
@@ -163,10 +179,14 @@ def main():
                 keyword = ''
                 while len(keyword.strip()) <= 0:
                     keyword = input('请输入匹配标题用的关键词')
+                company = '不存在的公司'
+                while company not in company_id.keys():
+                    company = input('请输入信息发布的部门（分公司）\n不输入则不过滤发布的部门（分公司）')
                 crawl_procurements(
                     start_index=start_index,
                     end_index=end_index,
-                    keyword=keyword
+                    keyword=keyword,
+                    company=company
                 )
             else:
                 raise ValueError('cmd error!\ncmd should be "crawl" or "filter"')
